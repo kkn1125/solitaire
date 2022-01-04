@@ -50,10 +50,17 @@ html, body{
     height: 100%;
 }
 
+body{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-image: url(./img/background.jpg);
+}
+
 #app{
-    height: 100%;
+    width: 100%;
+    height: 40em;
     padding: 1em;
-    background-image: url(http://cheerspokernh.com/wp-content/uploads/2018/02/bigstock-poker-table-background-26587844-2-1.jpg);
 }
 
 .ground{
