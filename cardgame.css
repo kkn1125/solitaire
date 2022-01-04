@@ -1,0 +1,208 @@
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed, 
+figure, figcaption, footer, header, hgroup, 
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	font-size: 100%;
+	font: inherit;
+	vertical-align: baseline;
+}
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure, 
+footer, header, hgroup, menu, nav, section {
+	display: block;
+}
+body {
+	line-height: 1;
+}
+ol, ul {
+	list-style: none;
+}
+blockquote, q {
+	quotes: none;
+}
+blockquote:before, blockquote:after,
+q:before, q:after {
+	content: '';
+	content: none;
+}
+table {
+	border-collapse: collapse;
+	border-spacing: 0;
+}
+
+*{
+    box-sizing: border-box;
+}
+
+html, body{
+    height: 100%;
+}
+
+#app{
+    height: 100%;
+    padding: 1em;
+    background-image: url(http://cheerspokernh.com/wp-content/uploads/2018/02/bigstock-poker-table-background-26587844-2-1.jpg);
+}
+
+.ground{
+    display: flex;
+    gap: 1em;
+    justify-content: space-between;
+    height: 100%;
+}
+
+.ground>div.column:nth-child(1){
+    flex: 0 0 auto;
+    width: 15%;
+}
+
+.ground>div.column:nth-child(2){
+    flex: 1 1 0%;
+}
+
+.ground>div.column:nth-child(3){
+    flex: 0 0 auto;
+    width: 15%;
+}
+
+.ground .column{
+    /* background-color: gray; */
+    height: inherit;
+    padding: .5rem;
+}
+
+.stacks{
+    display: flex;
+    flex-direction: column;
+    row-gap: 2em;
+    width: 100%;
+    height: 100%;
+    justify-content: start;
+    align-items: center;
+}
+
+.slot{
+    flex: 0 0 auto;
+    position: relative;
+}
+
+.slot .card{
+    position: absolute;
+    top: 0;
+}
+
+.plays{
+    width: 100%;
+}
+
+.decks{
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    width: 100%;
+}
+
+.decks .col{
+    position: relative;
+    height: 0%;
+}
+
+.decks .col .card{
+    position: absolute;
+    transition: transform 300ms;
+    -webkit-transition: transform 300ms;
+    -moz-transition: transform 300ms;
+    -ms-transition: transform 300ms;
+    -o-transition: transform 300ms;
+}
+
+.decks .col .card:last-child.active,
+.decks .col .card:last-child:hover{
+    box-shadow: 0 0 .5rem 0 rgba(0,0,0,1) !important;
+    transform: scale(1.2) translateY(10%);
+    -webkit-transform: scale(1.2) translateY(10%);
+    -moz-transform: scale(1.2) translateY(10%);
+    -ms-transform: scale(1.2) translateY(10%);
+    -o-transform: scale(1.2) translateY(10%);
+}
+
+.gotcha{
+    height: 100%;
+}
+
+.gotcha .recharge{
+    background-image: url(./img/back.png);
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-origin: center;
+    cursor: pointer;
+}
+
+.gotcha .recharge.no-card{
+    background-image: none;
+    background-color: rgba(255,255,255,0.5) !important;
+    border: 3px solid white;
+    transform: rotate(25deg);
+    -webkit-transform: rotate(25deg);
+    -moz-transform: rotate(25deg);
+    -ms-transform: rotate(25deg);
+    -o-transform: rotate(25deg);
+    pointer-events: none;
+    position: relative;
+}
+
+.gotcha .recharge.no-card::after{
+    content: 'empty';
+    position: absolute;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: rgba(0, 0, 0, 0.5);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    -webkit-transform: translate(-50%, -50%);
+    -moz-transform: translate(-50%, -50%);
+    -ms-transform: translate(-50%, -50%);
+    -o-transform: translate(-50%, -50%);
+}
+
+.store{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+
+.empty{
+    position: absolute;
+    width: inherit;
+    height: inherit;
+    border: 3px dashed rgb(96, 53, 255);
+    border-radius: inherit;
+    -webkit-border-radius: inherit;
+    -moz-border-radius: inherit;
+    -ms-border-radius: inherit;
+    -o-border-radius: inherit;
+    cursor: pointer;
+    transition: 150ms;
+    -webkit-transition: 150ms;
+    -moz-transition: 150ms;
+    -ms-transition: 150ms;
+    -o-transition: 150ms;
+}
+
+.empty:hover{
+    background-color: #6831ff80 !important;
+}
