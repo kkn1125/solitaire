@@ -1,16 +1,25 @@
 <!DOCTYPE html>
 <html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="./cardgame.css">
-    <title>Card Game</title>
-</head>
-<body>
 
-    <div id="app"></div>
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="./src/css/cardgame.css">
+        <title>Card Game</title>
+    </head>
 
-    <script src="./cardgame.js"></script>
-</body>
+    <body>
+        <script id="inject">
+            comment = document.createComment('Code injected by Solitaire-Games');
+            script = document.createElement('script');
+            script.src = './src/js/Solitaire.js';
+            script.type = 'module';
+            document.body.append(comment, script);
+            delete script;
+            delete comment;
+            inject.remove();
+        </script>
+    </body>
+
 </html>
