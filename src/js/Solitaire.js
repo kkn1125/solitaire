@@ -271,7 +271,7 @@ import {
                         views.handleCardPick(cardDeck, cardStack, cardTempStore);
                         return;
                     }
-                    console.log(cardTempPick)
+                    // dev done** console.log(cardTempPick)
                     if(pickCard.card == cardTempPick.card){
                         // 같은 카드 클릭 시
                     } else if(pickCard.card.isPick==true) {
@@ -319,7 +319,7 @@ import {
 
         this.renderMoveCount = function(){
             movedCount++;
-            console.log(movedCount)
+            // dev done** console.log(movedCount)
             views.renderMoveCount(movedCount);
         }
 
@@ -425,7 +425,7 @@ import {
                 for(let store in cardStore){
                     if(deck.length==0) continue;
                     if(deck[deck.length-1].num-1==cardStore[store].num&&!this.isCrossSide(deck.type, cardStore[store].type)){
-                        console.log(cardStore[store])
+                        // dev done** console.log(cardStore[store])
                         oneCardLastStored = cardStore.splice(store, 1).pop();
                         break;
                     }
