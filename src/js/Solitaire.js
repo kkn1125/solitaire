@@ -106,12 +106,12 @@ import {
     }
 
     function Model() {
-        window.cardStore = [];
-        window.cardDeck = [];
-        window.cardStack = [];
-        window.cardTempStore = [];
-        window.cardTempPick = null;
-        window.cardTempBundler = null;
+        const cardStore = [];
+        const cardDeck = [];
+        const cardStack = [];
+        const cardTempStore = [];
+        let cardTempPick = null;
+        let cardTempBundler = null;
         let pickMode = false;
 
         let parts = null;
@@ -136,6 +136,12 @@ import {
         }
 
         this.initCard = function(){
+            cardTempPick = null;
+            cardTempBundler = null;
+
+            while(cardTempStore.length>0){
+                cardTempStore.pop();
+            }
             while(cardDeck.length>0){
                 cardDeck.pop();
             }
@@ -238,7 +244,7 @@ import {
             // dev done** console.log('순차묶음 또는 개별카드입니다.')
 
             if(this.isStackable(pickCard) && !pickMode){
-                this.directStackMove(pickCard);
+                if(bundler.length==1) this.directStackMove(pickCard);
             } else {
                 if(pickMode){
                     // dev done** console.log('두번째 픽')
@@ -272,6 +278,9 @@ import {
                 }
             }
 
+            if(cardStack.filter(last=>last[last.length-1].num == 13).length==4){
+                views.successGame();
+            }
             views.handleCardPick(cardDeck, cardStack, cardTempStore);
         }
 
@@ -530,6 +539,21 @@ import {
             this.createGame();
         }
 
+        this.successGame = function(){
+            document.body.insertAdjacentHTML('afterbegin', `
+                <div id="success">
+                    <div>축하합니다!</div>
+                    <div>게임을 완료했습니다!</div>
+                    <div>🎉🃏🃏🃏✨</div>
+                    <div>
+                        <button class="restart">
+                            restart
+                        </button>
+                    </div>
+                </div>
+            `);
+        }
+
         this.setTime = function(){
             totalTime = 0;
             requestAnimationFrame(this.ticktock.bind(this));
@@ -559,6 +583,9 @@ import {
 
         this.renderCardDekcs = function (store, deck, stack) {
             cancelAnimationFrame(this.ticktock.bind(this));
+            const success = document.querySelector('#success');
+            if(success) success.remove();
+            
             this.setTime();
 
             this.clearView(elemDecks);
