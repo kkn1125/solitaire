@@ -340,6 +340,7 @@ body {
     -moz-border-radius: inherit;
     -ms-border-radius: inherit;
     -o-border-radius: inherit;
+    pointer-events: none;
 }
 
 @keyframes show {
@@ -369,6 +370,7 @@ body {
     content: '✅';
     box-shadow: 0 0 0 3px rgb(157, 104, 255);
     background-color: rgba(255, 255, 255, 0.5);
+    pointer-events: none;
 }
 
 #app .ground .row .card.active:hover::before{

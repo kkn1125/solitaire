@@ -110,6 +110,7 @@ import {
         const cardDeck = [];
         const cardStack = [];
         const cardTempStore = [];
+        let movedCount = 0;
         let cardTempPick = null;
         let cardTempBundler = null;
         let pickMode = false;
@@ -128,11 +129,14 @@ import {
         }
 
         this.restart = function(){
+            movedCount = 0;
             this.initCard();
             this.setAllCard();
             this.shuffleCard();
             this.setPlayCard();
             this.renderCardDekcs();
+            views.renderMoveCount(0);
+            this.renderScore(cardStack);
         }
 
         this.initCard = function(){
@@ -224,6 +228,7 @@ import {
             // console.log(bundler)
             if(!pickMode && pickCard==undefined) return;
             if(pickMode && pickCard==undefined){
+                this.renderMoveCount();
                 this.moveCard2Empty(cardTempBundler, cardTempPick, handles);
                 pickMode = false;
                 cardTempPick = null;
@@ -245,10 +250,28 @@ import {
             // dev done** console.log('순차묶음 또는 개별카드입니다.')
 
             if(this.isStackable(pickCard) && !pickMode){
-                if(bundler.length==1) this.directStackMove(pickCard);
+                if(bundler.length==1) {
+                    this.renderMoveCount();
+                    this.directStackMove(pickCard);
+                } else {
+                    pickMode = true;
+                    bundler.map(({card})=>card.isPick=true);
+                    cardTempBundler = bundler;
+                    // pickCard.card.isPick = true;
+                    cardTempPick = pickCard;
+                }
             } else {
                 if(pickMode){
                     // dev done** console.log('두번째 픽')
+                    if(!handles[0].parentNode.classList.contains('col-stacking')) {
+                        pickMode = false;
+                        cardTempPick = null;
+                        cardTempBundler = null;
+                        this.initAttrPicked();
+                        views.handleCardPick(cardDeck, cardStack, cardTempStore);
+                        return;
+                    }
+                    console.log(cardTempPick)
                     if(pickCard.card == cardTempPick.card){
                         // 같은 카드 클릭 시
                     } else if(pickCard.card.isPick==true) {
@@ -257,7 +280,8 @@ import {
                         if(this.isCrossSide(cardTempPick.type, pickCard.type)){
                             // dev done** console.log('쌓기 가능')
                             // 이동 메서드
-                            this.moveCard2Card(cardTempBundler, cardTempPick, pickCard);
+                            this.renderMoveCount();
+                            this.moveCard2Card(cardTempBundler, cardTempPick, pickCard, bundler);
                         } else {
                             // dev done** console.log('쌓기 불가')
                         }
@@ -282,10 +306,25 @@ import {
             if(cardStack.filter(last=>last.length>0 && last[last.length-1].num == 13).length==4){
                 views.successGame();
             }
+
+            this.renderScore(cardStack);
             views.handleCardPick(cardDeck, cardStack, cardTempStore);
         }
 
+        this.renderScore = function(score){
+            let count = 0;
+            score.forEach(x=>count+=x.length);
+            views.renderScore(count);
+        }
+
+        this.renderMoveCount = function(){
+            movedCount++;
+            console.log(movedCount)
+            views.renderMoveCount(movedCount);
+        }
+
         this.moveCard2Empty = function(bundler, prev, handles){
+            if(prev.num!=13) return; // 개발용 easy버전
             let moveCard = [];
             // dev done** console.log(bundler)
             if(prev.parent[0] instanceof Array){
@@ -306,8 +345,9 @@ import {
             }
         }
 
-        this.moveCard2Card = function(bundler, prev, pick){
+        this.moveCard2Card = function(bundler, prev, pick, bundlers){
             let moveCard = [];
+            if(bundlers.length>1) return;
             if(prev.parent[0] instanceof Array){
                 for(let i=0; i<bundler.length; i++){
                     moveCard.push(prev.parent[prev.deckNum].pop());
@@ -378,7 +418,21 @@ import {
                 views.stopStoreDeck();
                 return;
             }
-            const oneCardLastStored = cardStore.pop();
+            // let oneCardLastStored = cardStore.pop();
+
+            let oneCardLastStored;
+            for(let deck of cardDeck){
+                for(let store in cardStore){
+                    if(deck.length==0) continue;
+                    if(deck[deck.length-1].num-1==cardStore[store].num&&!this.isCrossSide(deck.type, cardStore[store].type)){
+                        console.log(cardStore[store])
+                        oneCardLastStored = cardStore.splice(store, 1).pop();
+                        break;
+                    }
+                }
+                if(oneCardLastStored) break;
+            }
+            if(!oneCardLastStored) oneCardLastStored = cardStore.pop();
             oneCardLastStored.isStored = false;
             oneCardLastStored.isBack = false;
             cardTempStore.push(oneCardLastStored);
@@ -529,15 +583,32 @@ import {
             document.body.prepend(parts.app);
             document.body.insertAdjacentHTML('afterbegin', `
             <div class="title">
-                <span>time</span>
-                <span class="time"></span>
-            </div>
-            <div>
-                <button class="restart">restart</button>
+                <div>
+                    <span>time</span>
+                    <span class="time"></span>
+                </div>
+                <div>
+                    <span>score</span>
+                    <span class="score">0</span>
+                    ⩵ 
+                    <span>moved</span>
+                    <span class="moved">0</span>
+                </div>
+                <div style="margin-top: 1em;">
+                    <button class="restart">restart</button>
+                </div>
             </div>
             `);
             this.setTime();
             this.createGame();
+        }
+
+        this.renderScore = function(score){
+            document.querySelector('.score').textContent = score;
+        }
+
+        this.renderMoveCount = function(moved){
+            document.querySelector('.moved').textContent = moved;
         }
 
         this.successGame = function(){
@@ -648,8 +719,8 @@ import {
             const stacking = elemStores.querySelector('.stacking');
             this.clearView(stacking);
             // dev done** console.log(store)
-            store.forEach((card, idx) => {
-                stacking.insertAdjacentHTML('beforeend', parts.SCard.render(card, -idx * (1.1 / store.length) * 100));
+            [...store].slice(store.length<3?0:store.length-3, store.length).forEach((card, idx) => {
+                stacking.insertAdjacentHTML('beforeend', parts.SCard.render(card, -idx * 50));
                 // stack이 쌓이면 쌓이는 개수만큼 최대를 초과하지 않고,
                 // 등분되어 쌓이게 한다.
             });
