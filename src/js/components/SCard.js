@@ -9,7 +9,7 @@ const SStacking = {
     render(){
         return `
             <div class="stacking">
-                <div class="card">
+                <div class="card none">
                 </div>
             </div>
         `
@@ -42,8 +42,8 @@ const SCard = {
         return `
         <div
         ${data?.id?`data-card-id="${data.id}"`:''}
-        class="{{class}} ${data?.isPick?'active':''} ${data?.isBack!=undefined&&data.isBack==true?'back':'front'}"
-        style="${idx>0?'top:'+idx*20+'px;':idx<0?'left:'+Math.abs(idx)+'px;':''}${data?.type&&data?.num?`background-image: url('../src/img/${convertNum}_of_${convertType}.png')`:''}"
+        class="{{class}} ${data?.class?data.class:''} ${data?.isPick?'active':''} ${data&&data.isBack==true?'back':data&&data.isBack==false?'front':data?.class?'':'none'}"
+        style="${idx>0?'top:'+idx*20+'px;':idx<0?'left:'+Math.abs(idx)+'px;':''}${data?.type&&data?.num?`background-image: url('${location.pathname=='/'?'..':'.'}/src/img/${convertNum}_of_${convertType}.png')`:''}"
         ${data?.type?`data-card-type="${data.type}"`:''}
         ${data?.num?`data-card-num="${data.num}"`:''}
         ></div>
