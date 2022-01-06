@@ -180,6 +180,7 @@ import {
             for(let i=0; i<parts.Card.deckCount; i++){
                 cardDeck.push([]);
             }
+
             parts.Card.types.forEach(type => cardStack.push([]));
         }
 
@@ -277,8 +278,8 @@ import {
                     // console.log(cardTempPick);
                 }
             }
-
-            if(cardStack.filter(last=>last[last.length-1].num == 13).length==4){
+            
+            if(cardStack.filter(last=>last.length>0 && last[last.length-1].num == 13).length==4){
                 views.successGame();
             }
             views.handleCardPick(cardDeck, cardStack, cardTempStore);
