@@ -186,6 +186,7 @@ body {
 }
 
 #app {
+    max-width: 900px;
     width: 100%;
     height: 30em;
     margin: 1em;
@@ -221,7 +222,12 @@ body {
     backdrop-filter: blur(5px);
 }
 
-#success>:not(:last-child){
+#success .restart{
+    font-size: 3rem;
+    margin-left: 0;
+}
+
+#success>:not(:nth(3)-child){
     font-weight: bold;
 }
 

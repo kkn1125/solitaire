@@ -171,7 +171,7 @@ import {
                         type: type,
                         num: num,
                         isPick: false,
-                        isBack: false, // 개발용 세팅
+                        isBack: true, // 개발용 세팅
                         isStored: true,
                     });
                 }
