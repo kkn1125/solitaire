@@ -89,58 +89,65 @@
         this.autoComplete = function () {
             let idx = 0;
             let noStackCount = 0;
-            while(cardPlaying.filter(col=>col.length>0).length > 0){
-                if(idx==7){
-                    idx = 0;
-                }
-                
-                const col = cardPlaying[idx];
-                const last = col[col.length-1];
-                if(col.length>0) {
-                    const suitId = parts.card.suits.indexOf(last.$suit);
-                    if(cardStack[suitId].length>0){
-                        const stackLast = cardStack[suitId].slice(-1)[0];
-                        if(last.$suit == stackLast.$suit && last.deno == stackLast.deno+1){
-                            console.log(`쌓기 ${last.deno}|${last.$suit} -> ${stackLast.deno}|${stackLast.$suit}`);
-                            const poped = col.pop();
-                            poped.isStaged = true;
-                            poped.isBack = false;
-                            cardStack[suitId].push(poped);
-                            noStackCount = 0;
+            let autos = setInterval(() => {
+                if(cardPlaying.filter(col=>col.length>0).length > 0){
+                    if(idx==7){
+                        idx = 0;
+                    }
+                    
+                    const col = cardPlaying[idx];
+                    const last = col[col.length-1];
+                    if(col.length>0) {
+                        const suitId = parts.card.suits.indexOf(last.$suit);
+                        if(cardStack[suitId].length>0){
+                            const stackLast = cardStack[suitId].slice(-1)[0];
+                            if(last.$suit == stackLast.$suit && last.deno == stackLast.deno+1){
+                                console.log(`쌓기 ${last.deno}|${last.$suit} -> ${stackLast.deno}|${stackLast.$suit}`);
+                                const poped = col.pop();
+                                poped.isStaged = true;
+                                poped.isBack = false;
+                                cardStack[suitId].push(poped);
+                                noStackCount = 0;
+                            } else {
+                                noStackCount += 1;
+                            }
                         } else {
-                            noStackCount += 1;
-                        }
-                    } else {
-                        if(last.deno == 1){
-                            const poped = col.pop();
-                            poped.isStaged = true;
-                            poped.isBack = false;
-                            cardStack[suitId].push(poped);
-                            noStackCount = 0;
-                        } else {
-                            noStackCount += 1;
+                            if(last.deno == 1){
+                                const poped = col.pop();
+                                poped.isStaged = true;
+                                poped.isBack = false;
+                                cardStack[suitId].push(poped);
+                                noStackCount = 0;
+                            } else {
+                                noStackCount += 1;
+                            }
                         }
                     }
+    
+                    idx++;
+            
+                    if(noStackCount>14){
+                        this.initSelectedCard();
+                        this.autoBackFlip();
+                        views.cardRender(cardStock, cardPlaying, cardStack, total, moved);
+                        clearInterval(autos);
+                    }
+                } else {
+                    clearInterval(autos);
                 }
+                this.initSelectedCard();
+                this.autoBackFlip();
+                views.cardRender(cardStock, cardPlaying, cardStack, total, moved);
+            }, 500);
+            // while(cardPlaying.filter(col=>col.length>0).length > 0){
+                
+            // }
 
-                idx++;
-        
-                if(noStackCount>14){
-                    this.initSelectedCard();
-                    this.autoBackFlip();
-                    views.cardRender(cardStock, cardPlaying, cardStack, total, moved);
-                    break;
-                }
-            }
-
-            if(cardPlaying.filter(col=>col.length>0).length>0){
-                console.log('실패')
-            } else {
-                console.log('성공')
-            }
-            this.initSelectedCard();
-            this.autoBackFlip();
-            views.cardRender(cardStock, cardPlaying, cardStack, total, moved);
+            // if(cardPlaying.filter(col=>col.length>0).length>0){
+            //     console.log('실패')
+            // } else {
+            //     console.log('성공')
+            // }
         }
 
         // ++ 포스팅 4편에 들어갈 내용
@@ -263,11 +270,12 @@
                 this.cardMoveToEmpty(Model.selectBundle.pop(), col, idx);
                 this.initSelectedCard();
                 return ;
-            } else if(!card && !parent.parentNode.classList.contains('row')){
-                this.initSelectedCard();
-                return ;
             }
-            
+            //  else if(!card && !parent.parentNode.classList.contains('row')){
+            //     this.initSelectedCard();
+            //     return ;
+            // }
+            console.log(cardPlaying)
             if(card.$parent[0] instanceof Array) Object.assign(pick, {
                 col: col
             })
@@ -326,7 +334,7 @@
         }
 
         this.cardMoveToEmpty = function (card, col, idx) {
-            if(card.card.deno!=13) return;
+            // if(card.card.deno!=13) return; 개발용
             const temp = [];
             const cardCol = card.card.$parent[card.col];
             if(card.card.$parent[0] instanceof Array){
