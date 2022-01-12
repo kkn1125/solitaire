@@ -157,7 +157,7 @@
         this.cardSettings = function () {
             this.initCardSetting(); // ++ 포스팅 3편에 들어갈 내용
             this.generateCardSuits(parts.card);
-            // this.shuffleCard();
+            this.shuffleCard();
             this.handOutCard();
         }
 
