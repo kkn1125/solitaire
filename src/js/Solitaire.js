@@ -418,20 +418,20 @@ import {
                 views.stopStoreDeck();
                 return;
             }
-            // let oneCardLastStored = cardStore.pop();
+            let oneCardLastStored = cardStore.pop();
 
-            let oneCardLastStored;
-            for(let deck of cardDeck){
-                for(let store in cardStore){
-                    if(deck.length==0) continue;
-                    if(deck[deck.length-1].num-1==cardStore[store].num&&!this.isCrossSide(deck.type, cardStore[store].type)){
-                        // dev done** console.log(cardStore[store])
-                        oneCardLastStored = cardStore.splice(store, 1).pop();
-                        break;
-                    }
-                }
-                if(oneCardLastStored) break;
-            }
+            // let oneCardLastStored;
+            // for(let deck of cardDeck){
+            //     for(let store in cardStore){
+            //         if(deck.length==0) continue;
+            //         if(deck[deck.length-1].num-1==cardStore[store].num&&!this.isCrossSide(deck.type, cardStore[store].type)){
+            //             // dev done** console.log(cardStore[store])
+            //             oneCardLastStored = cardStore.splice(store, 1).pop();
+            //             break;
+            //         }
+            //     }
+            //     if(oneCardLastStored) break;
+            // }
             if(!oneCardLastStored) oneCardLastStored = cardStore.pop();
             oneCardLastStored.isStored = false;
             oneCardLastStored.isBack = false;
