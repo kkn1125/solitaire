@@ -1,397 +1,381 @@
-/**
- * Vue 비슷무리한 기능
- * 1. component 구현
- *  - 데이터 자동 바인딩
- *  - {{ ... }} 구문 사용
- *  - render의 인자 값은 항상 오브젝트로 할 것
- * 
- * [솔리테어 구현]
- * # 카드 - ✅
- * 1. 총 52장이고, spades, clubs, hearts, diamonds 총 4가지 타입마다 13장씩 사용
- * 
- * # 게임
- * ## 형식
- * 1. 크게 3가지로 분류 - ✅
- *  - 뽑는 카드 덱
- *  - 쌓는 카드 덱
- *  - 나열된 카드 덱 7*7 사이즈고 7 등차수열로 쌓여짐
- * 
- * 2. 뽑는 카드 덱
- *  - 뽑을 때마다 쌓임
- *  - 제일 마지막에 뽑은 카드만 사용할 수 있다.
- * 
- * 3. 쌓는 카드 덱 - ✅
- *  - spades, clubs, hearts, diamonds 총 4가지로 쌓임
- *  - 
- * 
- * ## 규칙
- * 1. spades, clubs은 검정, hearts, diamonds는 빨강
- * 2. 검정과 빨강을 교차해서 카드를 쌓아 나간다. 이때 검정|빨강 끼리를 불가하다.
- * 3. 쌓는 덱이 비어있으면 순차적으로 바로 올릴 수 있다.
- * 4. 쌓는 덱의 마지막 카드 다음의 카드가 있다면 바로 올릴 수 있다.
- */
-
-import {
-    SCard,
-    SStacking
-} from './components/SCard.js';
-import {
-    SGround
-} from './components/SGround.js';
-
 (function () {
+
     function Controller() {
         let models = null;
 
         this.init = function (model) {
             models = model;
 
-            this.renderCardDekcs();
-            window.addEventListener('click', this.handleGetCardInStores);
-            window.addEventListener('click', this.handleCardPick);
-            window.addEventListener('click', this.handleCardEachFace);
+            // 포스팅 2편에 들어갈 내용
+            this.cardRender();
+            window.addEventListener('click', this.cardDraw);
+            window.addEventListener('click', this.cardMove);
+            window.addEventListener('click', this.cardCollect);
+            // ++ 포스팅 4편에 들어갈 내용
             window.addEventListener('click', this.restart);
+            // ++ 포스팅 4편에 들어갈 내용
+            window.addEventListener('click', this.autoComplete);
         }
 
+        // ++ 포스팅 4편에 들어갈 내용
         this.restart = function(ev){
-            const btn = ev.target;
-            if(!btn.classList.contains('restart')) return;
-
-            models.restart(btn);
+            const target = ev.target;
+            if(target.id != 'restart') return;
+            models.restart(target);
         }
 
-        this.renderCardDekcs = function () {
-            models.renderCardDekcs();
+        // ++ 포스팅 4편에 들어갈 내용
+        this.autoComplete = function (ev) {
+            const target = ev.target;
+            if(target.id != 'auto') return;
+            models.autoComplete(target);
         }
 
-        this.handleCardEachFace = function(ev){
-            const handle = ev.target;
-            if(!handle.classList.contains('card')) return ;
-            if(!handle.classList.contains('back')) return ;
-
-            if([...handle.parentNode.children].pop() != handle) return;
-
-            models.handleCardEachFace(handle);
+        // 포스팅 2편에 들어갈 내용
+        this.cardRender = function () {
+            models.cardRender();
         }
 
-        this.handleCardPick = function(ev){
-            const handle = ev.target;
-            if(!handle.classList.contains('card')) return;
-
-            if(handle.classList.contains('empty')){
-                models.handleCardPick([handle]);
-            }
-
-            if(!handle.classList.contains('front')) return;
-
-            if(handle.parentNode.classList.contains('stacking')){
-                if([...handle.parentNode.children].pop() != handle) return;
-                models.handleCardPick([handle]);
-            } else if(handle.parentNode.classList.contains('stacks')){
-                models.handleCardPick([handle]);
-            } else {
-                const copyList = [...handle.parentNode.children];
-                const handles = copyList.slice(copyList.indexOf(handle));
-                models.handleCardPick(handles);
-            }
+        this.cardMove = function (ev) {
+            const target = ev.target;
+            if(target.classList.contains('back')) return;
+            if(!target.classList.contains('card')) return;
+            if(!target.parentNode.classList.contains('stacking')) return;
+            
+            models.cardMove(target);
         }
 
-        this.handleGetCardInStores = function (ev) {
-            const handle = ev.target;
-            if (!handle.classList.contains('card')) return;
-            if (!handle.parentNode.classList.contains('stores')) return;
-            // handle
-            models.handleGetCardInStores();
+        // 포스팅 2편에 들어갈 내용
+        this.cardCollect = function (ev) {
+            const target = ev.target;
+            if(target.classList.contains('back')) return;
+            if(!target.classList.contains('card')) return;
+            if(!target.parentNode.classList.contains('stacking') || target.parentNode.lastElementChild != target) return;
+
+            models.cardCollect(target);
+        }
+
+        // 포스팅 2편에 들어갈 내용
+        this.cardDraw = function (ev) {
+            const target = ev.target;
+            if(!target.classList.contains('card') || !target.parentNode.classList.contains('stock')) return;
+
+            models.cardDraw(target);
         }
     }
 
     function Model() {
-        const cardStore = [];
-        const cardDeck = [];
-        const cardStack = [];
-        const cardTempStore = [];
-        let movedCount = 0;
-        let cardTempPick = null;
-        let cardTempBundler = null;
-        let pickMode = false;
-
-        let parts = null;
-
+        const cardStock = [];
+        const cardPlaying = Array.from(new Array(7), () => []);
+        const cardStack = Array.from(new Array(4), () => []); // ++ 포스팅 3편에 들어갈 내용
         let views = null;
+        let parts = null;
+        let total = 0;
+        const score = 1;
+        let isCombo = 0;
+        let moved = 0;
+
+        Model.count = 0;
+        Model.selectBundle = [];
 
         this.init = function (view) {
             views = view;
-            parts = view.part();
-            // this.initCard();
-            this.setAllCard();
-            this.shuffleCard();
-            this.setPlayCard();
+            parts = views.getParts();
+
+            this.cardSettings();
         }
 
-        this.restart = function(){
-            movedCount = 0;
-            this.initCard();
-            this.setAllCard();
-            this.shuffleCard();
-            this.setPlayCard();
-            this.renderCardDekcs();
-            views.renderMoveCount(0);
-            this.renderScore(cardStack);
+        // ++ 포스팅 4편에 들어갈 내용
+        this.autoComplete = function () {
+            let idx = 0;
+            let noStackCount = 0;
+            while(cardPlaying.filter(col=>col.length>0).length > 0){
+                if(idx==7){
+                    idx = 0;
+                }
+                
+                const col = cardPlaying[idx];
+                const last = col[col.length-1];
+                if(col.length>0) {
+                    const suitId = parts.card.suits.indexOf(last.$suit);
+                    if(cardStack[suitId].length>0){
+                        const stackLast = cardStack[suitId].slice(-1)[0];
+                        if(last.$suit == stackLast.$suit && last.deno == stackLast.deno+1){
+                            console.log(`쌓기 ${last.deno}|${last.$suit} -> ${stackLast.deno}|${stackLast.$suit}`);
+                            const poped = col.pop();
+                            poped.isStaged = true;
+                            poped.isBack = false;
+                            cardStack[suitId].push(poped);
+                            noStackCount = 0;
+                        } else {
+                            noStackCount += 1;
+                        }
+                    } else {
+                        if(last.deno == 1){
+                            const poped = col.pop();
+                            poped.isStaged = true;
+                            poped.isBack = false;
+                            cardStack[suitId].push(poped);
+                            noStackCount = 0;
+                        } else {
+                            noStackCount += 1;
+                        }
+                    }
+                }
+
+                idx++;
+        
+                if(noStackCount>14){
+                    this.initSelectedCard();
+                    this.autoBackFlip();
+                    views.cardRender(cardStock, cardPlaying, cardStack, total, moved);
+                    break;
+                }
+            }
+
+            if(cardPlaying.filter(col=>col.length>0).length>0){
+                console.log('실패')
+            } else {
+                console.log('성공')
+            }
+            this.initSelectedCard();
+            this.autoBackFlip();
+            views.cardRender(cardStock, cardPlaying, cardStack, total, moved);
         }
 
-        this.initCard = function(){
-            cardTempPick = null;
-            cardTempBundler = null;
+        // ++ 포스팅 4편에 들어갈 내용
+        this.restart = function (target) {
+            Model.count = 0;
+            this.cardSettings();
+            total = 0;
+            moved = 0;
+            isCombo = 0;
+            this.cardRender();
+            views.restart(target);
+        }
 
-            while(cardTempStore.length>0){
-                cardTempStore.pop();
+        this.cardSettings = function () {
+            this.initCardSetting(); // ++ 포스팅 3편에 들어갈 내용
+            this.generateCardSuits(parts.card);
+            // this.shuffleCard();
+            this.handOutCard();
+        }
+
+        // ++ 포스팅 3편에 들어갈 내용
+        this.initCardSetting = function(){
+            // ++ 포스팅 4편에 들어갈 내용
+            while(cardStock.length>0){
+                cardStock.pop();
             }
-            while(cardDeck.length>0){
-                cardDeck.pop();
-            }
-            while(cardStore.length>0){
-                cardStore.pop();
+            while(cardPlaying.length>0){
+                cardPlaying.pop();
             }
             while(cardStack.length>0){
                 cardStack.pop();
             }
+
+            // ++ 포스팅 4편에 들어갈 내용
+            cardPlaying.push(...Array.from(new Array(7), () => []));
+            cardStack.push(...Array.from(new Array(4), () => []));
         }
 
-        // card set //
-        this.shuffleCard = function () {
-            for (let card in cardStore) {
-                const random = parseInt(Math.random() * cardStore.length);
-                [cardStore[card], cardStore[random]] = [cardStore[random], cardStore[card]];
-            }
-        }
-
-        this.setAllCard = function () {
-            const cards = parts.Card;
-            let count = 1;
-            for (let type of [...cards.types]) {
-                for (let num of [...cards.nums]) {
-                    cardStore.push({
-                        id: count++,
-                        type: type,
-                        num: num,
-                        isPick: false,
-                        isBack: true, // 개발용 세팅
-                        isStored: true,
+        this.generateCardSuits = function ({
+            suits,
+            list
+        }) {
+            [...suits].forEach(type => {
+                return [...list].forEach(num => {
+                    cardStock.push({
+                        id: Model.count++,
+                        $suit: type,
+                        deno: num,
+                        // 포스팅 2편에 들어갈 내용
+                        imgSuit: num>10?type+2:type,
+                        imgNum: num==1?'ace':num==11?'jack':num==12?'queen':num==13?'king':num,
+                        shape: parts.card.shape[type],
+                        isBack: true, // 개발용
+                        isStaged: false,
+                        isSelected: false,
+                        $parent: cardStock,
                     });
-                }
-            }
-
-            for(let i=0; i<parts.Card.deckCount; i++){
-                cardDeck.push([]);
-            }
-
-            parts.Card.types.forEach(type => cardStack.push([]));
-        }
-
-        this.setPlayCard = function () {
-            const cards = parts.Card.deckCount;
-            for(let i=0; i<parts.Card.deckCount; i++){
-                cardDeck.pop();
-            }
-
-            for (let col = 1; col <= cards; col++) {
-                const newCol = [];
-                for (let row = 1; row <= col; row++) {
-                    const input = cardStore.pop();
-                    input.isStored = false;
-                    newCol.push(input);
-                }
-                const lastCard = newCol[newCol.length-1];
-                lastCard.isBack = false;
-                cardDeck.push(newCol);
-            }
-        }
-        // card set //
-
-        /**
-         * handle part
-         */
-        this.handleCardPick = function(handles){
-            /**
-             * 1. 스택가능한가?
-             * 2. 스택이 안된다면 첫번째 픽.
-             * 3. 두번째 픽과 등차관계인가?
-             * 4. 관계히면 해당위치로 이동.
-             * 5. 관계하지 않으면 취소.
-             * 6. 선택한 카드 이후의 카드를 모두 옮겨야한다.
-             * 7. 묶음이 차례가 아니면 취소.
-             */
-
-            const bundler = this.PickCardsToData(handles);
-            const pickCard = [...bundler].shift();
-
-            // console.log(bundler)
-            if(!pickMode && pickCard==undefined) return;
-            if(pickMode && pickCard==undefined){
-                this.renderMoveCount();
-                this.moveCard2Empty(cardTempBundler, cardTempPick, handles);
-                pickMode = false;
-                cardTempPick = null;
-                cardTempBundler = null;
-                this.initAttrPicked();
-                views.handleCardPick(cardDeck, cardStack, cardTempStore);
-                return;
-            }
-
-            if(!this.isCascade(bundler)) {
-                // dev done** console.log('순차 묶음이 아닙니다.');
-                pickMode = false;
-                cardTempPick = null;
-                cardTempBundler = null;
-                this.initAttrPicked();
-                views.handleCardPick(cardDeck, cardStack, cardTempStore);
-                return;
-            }
-            // dev done** console.log('순차묶음 또는 개별카드입니다.')
-
-            if(this.isStackable(pickCard) && !pickMode){
-                if(bundler.length==1) {
-                    this.renderMoveCount();
-                    this.directStackMove(pickCard);
-                } else {
-                    pickMode = true;
-                    bundler.map(({card})=>card.isPick=true);
-                    cardTempBundler = bundler;
-                    // pickCard.card.isPick = true;
-                    cardTempPick = pickCard;
-                }
-            } else {
-                if(pickMode){
-                    // dev done** console.log('두번째 픽')
-                    if(!handles[0].parentNode.classList.contains('col-stacking')) {
-                        pickMode = false;
-                        cardTempPick = null;
-                        cardTempBundler = null;
-                        this.initAttrPicked();
-                        views.handleCardPick(cardDeck, cardStack, cardTempStore);
-                        return;
-                    }
-                    // dev done** console.log(cardTempPick)
-                    if(pickCard.card == cardTempPick.card){
-                        // 같은 카드 클릭 시
-                    } else if(pickCard.card.isPick==true) {
-                        this.initAttrPicked();
-                    } else if(cardTempPick.num == pickCard.num-1){
-                        if(this.isCrossSide(cardTempPick.type, pickCard.type)){
-                            // dev done** console.log('쌓기 가능')
-                            // 이동 메서드
-                            this.renderMoveCount();
-                            this.moveCard2Card(cardTempBundler, cardTempPick, pickCard, bundler);
-                        } else {
-                            // dev done** console.log('쌓기 불가')
-                        }
-                    } else {
-                        // dev done** console.log('쌓기 불가')
-                    }
-                    pickMode = false;
-                    cardTempPick = null;
-                    cardTempBundler = null;
-                    this.initAttrPicked();
-                } else {
-                    // dev done** console.log('첫번째 픽')
-                    pickMode = true;
-                    bundler.map(({card})=>card.isPick=true);
-                    cardTempBundler = bundler;
-                    // pickCard.card.isPick = true;
-                    cardTempPick = pickCard;
-                    // console.log(cardTempPick);
-                }
-            }
-            
-            if(cardStack.filter(last=>last.length>0 && last[last.length-1].num == 13).length==4){
-                views.successGame();
-            }
-
-            this.renderScore(cardStack);
-            views.handleCardPick(cardDeck, cardStack, cardTempStore);
-        }
-
-        this.renderScore = function(score){
-            let count = 0;
-            score.forEach(x=>count+=x.length);
-            views.renderScore(count);
-        }
-
-        this.renderMoveCount = function(){
-            movedCount++;
-            // dev done** console.log(movedCount)
-            views.renderMoveCount(movedCount);
-        }
-
-        this.moveCard2Empty = function(bundler, prev, handles){
-            if(prev.num!=13) return; // 개발용 easy버전
-            let moveCard = [];
-            // dev done** console.log(bundler)
-            if(prev.parent[0] instanceof Array){
-                for(let i=0; i<bundler.length; i++){
-                    moveCard.push(prev.parent[prev.deckNum].pop());
-                }
-            } else {
-                for(let i=0; i<bundler.length; i++){
-                    moveCard.push(prev.parent.pop());
-                }
-            }
-
-            for(let deck in cardDeck){
-                if(cardDeck[deck].length==0 && deck == [...handles[0].parentNode.parentNode.children].indexOf(handles[0].parentNode)){
-                    cardDeck[deck].push(...moveCard.reverse());
-                    return;
-                }
-            }
-        }
-
-        this.moveCard2Card = function(bundler, prev, pick, bundlers){
-            let moveCard = [];
-            if(bundlers.length>1) return;
-            if(prev.parent[0] instanceof Array){
-                for(let i=0; i<bundler.length; i++){
-                    moveCard.push(prev.parent[prev.deckNum].pop());
-                }
-            } else {
-                for(let i=0; i<bundler.length; i++){
-                    moveCard.push(prev.parent.pop());
-                }
-            }
-            pick.parent[pick.deckNum].push(...moveCard.reverse());
-        }
-
-        this.directStackMove = function(card){
-            let moveCard;
-            if(card.parent[0] instanceof Array){
-                moveCard = card.parent[card.deckNum].splice(card.cardNum).pop();
-            } else {
-                moveCard = card.parent.splice(card.deckNum).pop();
-            }
-            cardStack[parts.Card.types.indexOf(moveCard.type)].push(moveCard);
-        }
-
-        this.PickCardsToData = function(handles){
-            if(handles[0].classList.contains('empty')) {
-                return [];
-            }
-            return [...handles].map(handle=>{
-                const data = handle.dataset;
-                return this.getCardInfo(data);
+                });
             });
         }
 
-        this.isCascade = function(bundler){
-            const copyBundler = [...bundler];
-            // dev done** console.log(copyBundler.length-1)
-            for(let valid=0; valid<copyBundler.length-1; valid++){
-                if(copyBundler[valid].num == copyBundler[valid+1].num+1){
-                    // dev done** console.log('숫자는 차례입니다.')
-                    if(this.isCrossSide(copyBundler[valid].type, copyBundler[valid+1].type)){
-                        continue;
+        this.shuffleCard = function () {
+            for (let card in cardStock) {
+                let random = parseInt(Math.random() * cardStock.length);
+                let tmp = cardStock[random];
+                cardStock[random] = cardStock[card];
+                cardStock[card] = tmp;
+            }
+        }
+
+        this.handOutCard = function () {
+            for (let col = 0; col < 7; col++) {
+                for (let row = 0; row <= col; row++) {
+                    const last = cardStock.pop();
+                    cardPlaying[col].push(last);
+                    last.$parent = cardPlaying;
+                    last.isStaged = true;
+                }
+                cardPlaying[col].slice(-1).pop().isBack = false;
+            }
+        }
+
+        // 포스팅 2편에 들어갈 내용
+        this.cardRender = function () {
+            this.autoBackFlip();
+            // ++ 포스팅 4편에 들어갈 내용
+            const isAutoComplete = this.checkAutoComplete();
+            console.log(isAutoComplete?'자동 쌓기 가능':'자동 쌓기 불가');
+            views.cardRender(cardStock, cardPlaying, cardStack, total, moved, isAutoComplete);
+        }
+
+        // ++ 포스팅 3편에 들어갈 내용
+        this.autoBackFlip = function () {
+            cardPlaying.forEach(col=>{
+                if(col.length>0) col[col.length-1].isBack = false;
+            });
+        }
+
+        // ++ 포스팅 3편에 들어갈 내용
+        this.cardMove = function (elCard) {
+            const isLast = [...elCard.parentNode.children].slice(1);
+            if(Model.selectBundle.length==0 && !elCard.classList.contains('front')) return;
+            if(elCard.closest('.stock') && isLast[isLast.length-1] != elCard) return;
+            this.cardSelecter(elCard);
+
+            this.cardRender();
+        }
+        
+        // ++ 포스팅 3편에 들어갈 내용
+        this.cardSelecter = function (elCard) {
+            const card = this.findCard(elCard);
+            const parent = elCard.parentNode;
+            const col = [...parent.parentNode.children].indexOf(parent);
+            const idx = [...parent.children].indexOf(elCard);
+            const pick = {
+                idx: idx,
+                card: card,
+            };
+            if(!card && parent.parentNode.classList.contains('row')) {
+                this.cardMoveToEmpty(Model.selectBundle.pop(), col, idx);
+                this.initSelectedCard();
+                return ;
+            } else if(!card && !parent.parentNode.classList.contains('row')){
+                this.initSelectedCard();
+                return ;
+            }
+            
+            if(card.$parent[0] instanceof Array) Object.assign(pick, {
+                col: col
+            })
+            
+            if(!this.validBundle(card)) {
+                this.initSelectedCard();
+                return;
+            }
+            
+            pick.card.isSelected = true;
+            
+            Model.selectBundle.push(pick);
+
+            if(Model.selectBundle.length==2){
+                const first = Model.selectBundle.shift();
+                const second = Model.selectBundle.shift();
+                const firstCol = first.card.$parent[first.col];
+                const secondCol = second.card.$parent[second.col];
+                // ++ 포스팅 4편에 들어갈 내용 (역으로 카드를 둘 때 에러 발생 수정)
+                if(secondCol==undefined) {
+                    this.initSelectedCard();
+                    return;
+                }
+                
+                if(this.isStackable([first.card, second.card])){
+                    const temp = [];
+                    if(first.card.$parent[0] instanceof Array){
+                        for(let i=firstCol.length; i>0; i--){
+                            if(i>=first.idx) {
+                                const last = firstCol.pop();
+                                last.$parent = second.card.$parent;
+                                temp.push(last);
+                            }
+                        }
+                        total += score;
                     } else {
-                        // dev done** console.log('크로스가 되지 않습니다')
-                        return false;
+                        const last = first.card.$parent.splice(first.card.$parent.indexOf(first.card), 1).pop();
+                        last.$parent = second.card.$parent;
+                        total += score;
+                        temp.push(last);
                     }
+                    moved++;
+                    temp.reverse();
+                    
+                    secondCol.push(...temp);
+                } else {
+                    if(Model.selectBundle[0] == Model.selectBundle[1]){
+                        console.log('동일 카드');
+                    } else {
+                        isCombo = 0;
+                        console.log('불가능');
+                    }
+                }
+                this.initSelectedCard();
+            }
+        }
+
+        this.cardMoveToEmpty = function (card, col, idx) {
+            if(card.card.deno!=13) return;
+            const temp = [];
+            const cardCol = card.card.$parent[card.col];
+            if(card.card.$parent[0] instanceof Array){
+                for(let i=cardCol.length; i>0; i--){
+                    if(i>=card.idx) {
+                        const last = cardCol.pop();
+                        last.$parent = cardPlaying;
+                        temp.push(last);
+                    }
+                }
+            } else {
+                const last = card.card.$parent.splice(card.card.$parent.indexOf(card.card), 1).pop();
+                last.$parent = cardPlaying;
+                temp.push(last);
+            }
+            temp.reverse();
+
+            cardPlaying[col].push(...temp);
+            moved++;
+        }
+
+        // ++ 포스팅 3편에 들어갈 내용
+        this.validBundle = function (card) {
+            const temp = [];
+            if(card.$parent[0] instanceof Array){
+                for(let col of card.$parent){
+                    const idx = col.indexOf(card);
+                    if(idx>-1){
+                        temp.push(...col.slice(idx));
+                        break;
+                    }
+                }
+            } else {
+                temp.push(card.$parent.filter(card=>card.isStaged).shift());
+            }
+
+            if(temp.length>1){
+                temp.forEach(card=>card.isSelected=true);
+                return this.isCascade(temp.reverse());
+            } else {
+                return true;
+            }
+        }
+
+        // ++ 포스팅 3편에 들어갈 내용
+        this.isCascade = function(validList){
+            for(let card=0; card<validList.length-1; card++){
+                if(this.isStackable([validList[card], validList[card+1]])){
+                    continue;
                 } else {
                     return false;
                 }
@@ -399,389 +383,398 @@ import {
             return true;
         }
 
-        this.handleCardEachFace = function (handle) {
-            // 카드 뽑기, 빈 곳 카드 뒤집기
-            const data = handle.dataset;
-            let pickCard = this.getCardInfo(data);
-
-            pickCard.card.isBack = false;
-
-            views.handleCardPick(cardDeck, cardStack, cardTempStore);
-        }
-
-        this.handleGetCardInStores = function () {
-            // store에서 카드 한 장 씩 뽑기
-            // stack에 쌓기
-            // console.log(cardDeck)
-            // console.log(cardStack)
-            if (cardStore.length == 0) {
-                views.stopStoreDeck();
-                return;
-            }
-            // let oneCardLastStored = cardStore.pop();
-
-            let oneCardLastStored;
-            for(let deck of cardDeck){
-                for(let store in cardStore){
-                    if(deck.length==0) continue;
-                    if(deck[deck.length-1].num-1==cardStore[store].num&&!this.isCrossSide(deck.type, cardStore[store].type)){
-                        // dev done** console.log(cardStore[store])
-                        oneCardLastStored = cardStore.splice(store, 1).pop();
-                        break;
-                    }
-                }
-                if(oneCardLastStored) break;
-            }
-            if(!oneCardLastStored) oneCardLastStored = cardStore.pop();
-            oneCardLastStored.isStored = false;
-            oneCardLastStored.isBack = false;
-            cardTempStore.push(oneCardLastStored);
-
-            views.handleGetCardInStores(cardTempStore);
-        }
-
-        /**
-         * valid part
-         */
-        this.isCrossSide = function(prev, pick){
-            const left = (type) => parts.Card.types.slice(0, 2).indexOf(type)>-1;
-            const right = (type) => parts.Card.types.slice(2).indexOf(type)>-1;
-
-            if(left(prev) && right(pick)){
+        // ++ 포스팅 3편에 들어갈 내용
+        this.isStackable = function ([first, second]) {
+            if(parseInt(first.deno)+1 == parseInt(second.deno) && this.isCrossable(first.$suit, second.$suit)){
                 return true;
-            } else if(left(pick) && right(prev)){
-                return true;
+            } else {
+                return false;
             }
-
-            return false;
         }
 
-        this.isStackable = function ({card, type, num, deckNum, cardNum, parent}) {
-            const idx = parts.Card.types.indexOf(type);
-            if(parent[0].length>0){
-                if(![...cardStack[idx]].pop()){
-                    if(card.num==1){
-                        return true;
-                    }
-                } else {
-                    if([...cardStack[idx]].pop().num == card.num-1){
-                        return true;
+        this.isCrossable = function (first, second) {
+            const isLeft = (type) => parts.card.suits.slice(0,2).indexOf(type)>-1;
+            const isRight = (type) => parts.card.suits.slice(2).indexOf(type)>-1;
+
+            return (isLeft(first) && isRight(second)) || (isRight(first) && isLeft(second));
+        }
+
+        // ++ 포스팅 3편에 들어갈 내용
+        this.initSelectedCard = function () {
+            Model.selectBundle = [];
+            // console.log(cardStock, cardStack, cardPlaying);
+            [].concat([...cardStock],[].concat(...cardStack),[].concat(...cardPlaying)).map(card=>{
+                card.isSelected = false;
+                return card;
+            });
+        }
+
+        // 포스팅 2편에 들어갈 내용
+        this.cardCollect = function (elCard) {
+            const card = this.findCard(elCard);
+            // ++ 포스팅 4편에 들어갈 내용
+            if(!card || !this.validNextCard(card)) return ;
+            let getCard;
+            if(card.$parent[0] instanceof Array){
+                for(let col of card.$parent){
+                    for(let row of col){
+                        if(row == card){
+                            // ++ 포스팅 4편에 들어갈 내용 // 버그 수정
+                            getCard = col.splice(card.$parent.indexOf(card), 1).pop();
+                            break;
+                        }
                     }
                 }
             } else {
-                if(![...cardStack[idx]].pop()){
-                    if(card.num==1){
-                        return true;
-                    }
-                } else {
-                    if([...cardStack[idx]].pop().num == card.num-1){
-                        return true;
-                    }
-                }
+                // ++ 포스팅 4편에 들어갈 내용 // 버그 수정
+                getCard = card.$parent.splice(card.$parent.indexOf(card), 1).pop();
             }
-            return false;
+            // ++ 포스팅 4편에 들어갈 내용 // 버그 수정
+            if(!getCard) return;
+            
+            card.$parent = cardStack;
+            cardStack[parts.card.suits.indexOf(card.$suit)].push(getCard);
+            isCombo += 1;
+            total += score*isCombo;
+            moved++;
+            this.initSelectedCard();
+            this.cardRender();
         }
 
-        this.getCardInfo = function(data){
-            return this.findDeckById(data, cardDeck) ?? this.findStoreById(data, cardTempStore) ?? this.findStackById(data, cardStack);
+        this.validNextCard = function(card){
+            if(card.deno == 1) return true;
+            else if(card.deno == cardStack[parts.card.suits.indexOf(card.$suit)]?.slice(-1)?.pop()?.deno+1) return true;
         }
 
-        this.findDeckById = function ({
-            cardId: pickId,
-            cardType: pickType,
-            cardNum: pickNum
-        }) {
-            for (let deck in cardDeck) {
-                for (let card in cardDeck[deck]) {
-                    const [type, num] = [cardDeck[deck][card].type, cardDeck[deck][card].num];
-                    if (type == pickType && num == pickNum) {
-                        return {
-                            card: cardDeck[deck][card],
-                            type: type,
-                            num: num,
-                            deckNum: parseInt(deck),
-                            cardNum: parseInt(card),
-                            parent: cardDeck
-                        };
-                    }
+        // ++ 포스팅 4편에 들어갈 내용
+        this.checkAutoComplete = function () {
+            const copyPlaying = [...cardPlaying].map(col=>col.map(card=> {
+                return {
+                    deno: card.deno,
+                    $suit: card.$suit
                 }
-            }
-            return undefined;
-        }
-
-        this.findStoreById = function ({
-            cardId: pickId,
-            cardType: pickType,
-            cardNum: pickNum
-        }) {
-            for (let deck in cardTempStore) {
-                const [type, num] = [cardTempStore[deck].type, cardTempStore[deck].num];
-                if (type == pickType && num == pickNum) {
-                    return {
-                        card: cardTempStore[deck],
-                        type: type,
-                        num: num,
-                        deckNum: parseInt(deck),
-                        parent: cardTempStore
-                    };
+            }))
+            const copyStack = [...cardStack].map(col=>col.map(card=> {
+                return {
+                    deno: card.deno,
+                    $suit: card.$suit
                 }
-            }
-            return undefined;
-        }
-
-        this.findStackById = function ({
-            cardId: pickId,
-            cardType: pickType,
-            cardNum: pickNum
-        }) {
-            for (let deck in cardStack) {
-                for (let card in cardStack[deck]) {
-                    const [type, num] = [cardStack[deck][card].type, cardStack[deck][card].num];
-                    if (type == pickType && num == pickNum) {
-                        return {
-                            card: cardStack[deck][card],
-                            type: type,
-                            num: num,
-                            deckNum: parseInt(deck),
-                            cardNum: parseInt(card),
-                            parent: cardStack
-                        };
+            }))
+            let idx = 0;
+            let noStackCount = 0;
+            while(copyPlaying.filter(col=>col.length>0).length > 0){
+                if(idx==7){
+                    idx = 0;
+                }
+                
+                const col = copyPlaying[idx];
+                const last = col[col.length-1];
+                if(col.length>0) {
+                    const suitId = parts.card.suits.indexOf(last.$suit);
+                    if(copyStack[suitId].length>0){
+                        const stackLast = copyStack[suitId].slice(-1).pop()
+                        if(last.$suit == stackLast.$suit && last.deno == stackLast.deno+1){
+                            console.log(`쌓기 ${last.deno}|${last.$suit} -> ${stackLast.deno}|${stackLast.$suit}`);
+                            copyStack[suitId].push(col.pop());
+                            noStackCount = 0;
+                        } else {
+                            noStackCount += 1;
+                        }
+                    } else {
+                        if(last.deno == 1){
+                            copyStack[suitId].push(col.pop());
+                            noStackCount = 0;
+                        } else {
+                            noStackCount += 1;
+                        }
                     }
                 }
+
+                idx++;
+        
+                if(noStackCount>6){
+                    return false;
+                }
             }
-            return undefined;
+            return true;
         }
 
-        this.initAttrPicked = function () {
-            [].concat(...cardTempStore,...cardStore).map(card => {
-                card.isPick = false;
-                return card;
-            });
+        // 포스팅 2편에 들어갈 내용
+        this.cardDraw = function (elStock) {
+            const notStaged = cardStock.filter(s=>!s.isStaged);
+            for(let card in notStaged){
+                if(card == notStaged.length-1){
+                    notStaged[card].isStaged = true;
+                    notStaged[card].isBack = false;
+                }
+            }
 
-            [...cardDeck,...cardStack].map(deck => deck.map(card => {
-                card.isPick = false;
-                return card;
-            }));
+            // isCombo = 0; 이건 좀 억울할 듯
+
+            this.initSelectedCard(); // ++ 포스팅 4편에 들어갈 내용
+            this.cardRender();
         }
 
-        // render //
-        this.renderCardDekcs = function () {
-            views.renderCardDekcs(cardStore, cardDeck, cardStack);
+        // 포스팅 2편에 들어갈 내용
+        this.findCard = function (card) {
+            return [].concat([...cardStock],[].concat(...cardStack),[].concat(...cardPlaying)).filter(c=>c.id == card.dataset.cardId).pop();
         }
     }
 
     function View() {
-        let elemStores = null;
-        let elemStacks = null;
-        let elemDecks = null;
         let parts = null;
-        let secTemp = 0;
-        let totalTime = 0;
+        let options = null;
+        let elStock = null;
+        let elStack = null;
+        let elColumns = null;
+        let time = 0;
+        let loop;
 
         this.init = function (part) {
             parts = part;
-            document.body.prepend(parts.app);
-            document.body.insertAdjacentHTML('afterbegin', `
-            <div class="title">
-                <div>
-                    <span>time</span>
-                    <span class="time"></span>
-                </div>
-                <div>
-                    <span>score</span>
-                    <span class="score">0</span>
-                    ⩵ 
-                    <span>moved</span>
-                    <span class="moved">0</span>
-                </div>
-                <div style="margin-top: 1em;">
-                    <button class="restart">restart</button>
-                </div>
-            </div>
-            `);
-            this.setTime();
-            this.createGame();
+
+            this.renderFrames();
         }
 
-        this.renderScore = function(score){
-            document.querySelector('.score').textContent = score;
-        }
-
-        this.renderMoveCount = function(moved){
-            document.querySelector('.moved').textContent = moved;
-        }
-
-        this.successGame = function(){
-            document.body.insertAdjacentHTML('afterbegin', `
-                <div id="success">
-                    <div>축하합니다!</div>
-                    <div>게임을 완료했습니다!</div>
-                    <div>🎉🃏🃏🃏✨</div>
-                    <div>
-                        <button class="restart">
-                            restart
-                        </button>
-                    </div>
-                </div>
-            `);
-        }
-
-        this.setTime = function(){
-            totalTime = 0;
-            requestAnimationFrame(this.ticktock.bind(this));
-        }
-
-        this.ticktock = function(){
-            const second = new Date().getSeconds();
-            if(secTemp<second){
-                const min = parseInt(totalTime/60);
-                const sec = totalTime%60;
-                const time = document.querySelector('.time');
-                time.textContent = `${min.toString().padStart(2, 0)}:${sec.toString().padStart(2, 0)}`;
-                totalTime++;
-            }
-            secTemp = second;
-            requestAnimationFrame(this.ticktock.bind(this));
-        }
-
-        this.createGame = function () {
-            this.setGround();
-            [elemStores, elemStacks, elemDecks] = [...document.querySelectorAll('.row>*, .col>*')];
-        }
-
-        this.setGround = function () {
-            parts.app.insertAdjacentHTML('beforeend', parts.SGround.render());
-        }
-
-        this.renderCardDekcs = function (store, deck, stack) {
-            cancelAnimationFrame(this.ticktock.bind(this));
-            const success = document.querySelector('#success');
-            if(success) success.remove();
+        // 포스팅 2편에 들어갈 내용
+        this.renderFrames = function () {
+            document.body.insertAdjacentHTML('afterbegin', parts.template.frame.render());
+            document.body.insertAdjacentHTML('afterbegin', parts.template.option.render());
             
-            this.setTime();
+            options = document.querySelector('.title');
+            elStock = document.querySelector('.stock');
+            elStack = document.querySelector('.stack');
+            elColumns = document.querySelector('.ground .row:last-child');
 
-            this.clearView(elemDecks);
-            this.clearView(elemStacks);
-            this.clearView(elemStores);
-
-            this.setStores(store);
-            this.setDecks(deck);
-            this.setStacks(stack);
+            elStack.insertAdjacentHTML('beforeend', parts.template.stack.render());
+            elColumns.insertAdjacentHTML('beforeend', parts.template.play.render());
+            
+            // ++ 포스팅 4편에 들어갈 내용
+            this.timerOn();
         }
 
-        this.setStores = function (store) {
-            elemStores.insertAdjacentHTML('beforeend', parts.SCard.render({
-                isBack: true
-            }));
-            elemStores.insertAdjacentHTML('beforeend', parts.SStacking.render());
+        this.restart = function (target) {
+            this.timerOff();
+            this.timerOn();
         }
 
-        this.setDecks = function (decks) {
-            const copyDecks = [...decks];
-            // dev done** console.log(copyDecks)
-            for (let deck in copyDecks) {
-                const colStack = document.createElement('div');
-                colStack.classList.add('col-stacking');
-                if(copyDecks[deck].length==0){
-                    colStack.insertAdjacentHTML('beforeend', parts.SCard.render({class:'empty'}));
-                }
-                for (let card in copyDecks[deck]) {
-                    colStack.insertAdjacentHTML('beforeend', parts.SCard.render(copyDecks[deck][card], card));
-                }
-                elemDecks.append(colStack);
-            }
+        // ++ 포스팅 4편에 들어갈 내용
+        this.timerOn = function(){
+            loop = setInterval(()=>{
+                time++;
+                let hour = parseInt(time/60/60).toString().padStart(2,0);
+                let min = parseInt(time/60).toString().padStart(2,0);
+                let sec = (time%60).toString().padStart(2,0);
+                document.querySelector('.time').textContent = `${time/60/60>=1?`${hour}:`:''}${min}:${sec}`;
+            }, 1000);
         }
 
-        this.setStacks = function (stack) {
-            for (let type in stack) {
-                if (stack[type].length == 0)
-                    elemStacks.insertAdjacentHTML('beforeend', parts.SCard.render());
-                else {
-                    const lastCard = [...stack[type]].pop();
-                    elemStacks.insertAdjacentHTML('beforeend', parts.SCard.render(lastCard));
-                }
-            }
+        // ++ 포스팅 4편에 들어갈 내용
+        this.timerOff = function(){
+            time = -1;
+            clearInterval(loop);
+        }
+        
+        // 포스팅 2편에 들어갈 내용
+        this.cardDraw = function (cardStock) {
+            this.clearStock(elStock);
+            const staged = cardStock.filter(s=>s.isStaged);
+            const notStaged = cardStock.filter(s=>!s.isStaged);
+            staged.reverse().forEach((s, idx)=>{
+                elStock.querySelector('.stacking').insertAdjacentHTML('beforeend', parts.card.render(s));
+            });
+
+            [...elStock.querySelector('.stacking').children].slice(1).slice(-3).forEach((el, idx)=>{
+                el.style.left = (idx*30)+'px';
+            });
+
+            if(notStaged.length==0) elStock.firstElementChild.classList.add('stop');
         }
 
-        // event controller parts
-        this.handleGetCardInStores = function (store) {
-            this.renderStacking(store);
-        }
-
-        this.handleCardPick = function (cardDeck, cardStack, cardTempStore) {
-            if(cardDeck.length>=0) this.renderColStacking(cardDeck);
-            if(cardStack.length>=0) this.renderStacks(cardStack);
-            if(cardTempStore.length>=0) this.renderStores(cardTempStore);
-        }
-
-        // view parts
-        this.renderStacking = function (store) {
-            const stacking = elemStores.querySelector('.stacking');
-            this.clearView(stacking);
-            // dev done** console.log(store)
-            [...store].slice(store.length<3?0:store.length-3, store.length).forEach((card, idx) => {
-                stacking.insertAdjacentHTML('beforeend', parts.SCard.render(card, -idx * 50));
-                // stack이 쌓이면 쌓이는 개수만큼 최대를 초과하지 않고,
-                // 등분되어 쌓이게 한다.
+        // 포스팅 2편에 들어갈 내용
+        this.cardCollect = function (cardStack) {
+            this.clearStack(elStack);
+            cardStack.forEach(stack=>{
+                stack.forEach((s, idx)=>{
+                    [...elStack.children][parts.card.suits.indexOf(s.$suit)].insertAdjacentHTML('beforeend', parts.card.render(s));
+                });
             });
         }
 
-        this.renderColStacking = function (cardDecks) {
-            this.clearView(elemDecks);
-            this.setDecks(cardDecks);
+        // 포스팅 2편에 들어갈 내용
+        this.cardPlaying = function (cardPlay) {
+            this.clearPlaying(elColumns);
+            for(let col in cardPlay){
+                for(let row in cardPlay[col]){
+                    [...elColumns.children][col].insertAdjacentHTML('beforeend', parts.card.render(cardPlay[col][row]));
+                    [...elColumns.children][col].lastElementChild.style.top = row*20+'px';
+                }
+            }
         }
 
-        this.renderStacks = function (cardStacks) {
-            this.clearView(elemStacks);
-            this.setStacks(cardStacks);
+        // 포스팅 2편에 들어갈 내용
+        this.cardRender = function (cardStock, cardPlay, cardStack, total, moved, isAutoComplete) {
+            this.optionsRender(total, moved);
+            this.cardPlaying(cardPlay);
+            this.cardCollect(cardStack);
+            this.cardDraw(cardStock); 
+
+            // ++ 포스팅 4편에 들어갈 내용
+            if(isAutoComplete){
+                this.renderAutoComplete();
+            }
         }
 
-        this.renderStores = function (cardStores) {
-            this.clearView(elemStores);
-            this.setStores(cardStores)
-            if(cardStores.length>0) this.renderStacking(cardStores);
+        // ++ 포스팅 4편에 들어갈 내용
+        this.renderAutoComplete = function(){
+            document.querySelector('.title').insertAdjacentHTML('beforeend', `
+                <button id="auto" style="border: none; background: coral; color: white; font-weight: bold; padding: .5rem; border-radius: .5rem; margin-top: 1rem;">
+                    Auto Complete
+                </button>
+            `);
         }
 
-        this.clearView = function (target) {
-            target.innerHTML = '';
+        this.optionsRender = function (total, moved) {
+            document.querySelector('.score').innerHTML = total;
+            document.querySelector('.moved').innerHTML = moved;
         }
 
-        this.stopStoreDeck = function () {
-            [...elemStores.children].shift().classList.add('stop');
+        // 포스팅 2편에 들어갈 내용
+        this.clearPlaying = function (el) {
+            el.innerHTML = parts.template.play.render();
         }
 
-        // emit to parent
-        this.part = function () {
+        // 포스팅 2편에 들어갈 내용
+        this.clearStack = function (el) {
+            el.innerHTML = parts.template.stack.render();
+        }
+
+        // 포스팅 2편에 들어갈 내용
+        this.clearStock = function (el) {
+            el.innerHTML = parts.template.stock.render();
+        }
+        
+        this.getParts = function () {
             return parts;
         }
     }
 
     return {
         init() {
-            const app = document.createElement('div');
-            app.id = 'app';
-
-            const Card = {};
-            Card.deckCount = 7;
-            Card.width = 50;
-            Card.height = Card.width * 1.5;
-            Card.types = ['spades', 'clubs', 'hearts', 'diamonds'];
-            Card.shapes = ['♠', '♣', '♥', '♦'];
-            Card.nums = new Array(13).fill(0).map((c, i) => i + 1);
-
-            const components = {
-                app,
-                Card,
-                SCard,
-                SStacking,
-                SGround,
+            const parts = {
+                options: {
+                    
+                },
+                card: {
+                    suits: ['spades', 'clubs', 'hearts', 'diamonds'],
+                    shape: {
+                        spades:'♠',
+                        clubs: '♣',
+                        hearts: '♥',
+                        diamonds: '♦',
+                    },
+                    list: new Array(13).fill(0).map((num, idx) => idx + 1),
+                    render(card) {
+                        const side = card ?.isBack == undefined ? 'empty' : card.isBack ? 'back' : 'front';
+                        return `
+                            <div class="card ${side} ${card.isSelected?'active':''}"
+                            data-card-id="${card?.id??'-1'}" 
+                            data-card-suit="${card?.$suit??'none'}"
+                            data-card-deno="${card?.deno??'none'}"
+                            style="background-image: url('./src/img/${card.imgNum}_of_${card.imgSuit}.png')">
+                            </div>
+                        `
+                    }
+                },
+                template: {
+                    // 포스팅 2편에 들어갈 내용
+                    option: {
+                        render(){
+                            return `<div class="title" style="margin-bottom: 1em; width: 90%;">
+                            <div id="restart" align="center" style="margin-bottom: 1em; font-size: 150%; border: 1px solid white; border-radius: 0.5rem; padding: 1em; user-select: none;">Solitaire</div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>
+                                    <span>Score</span>
+                                    <span class="score">0</span>
+                                </span>
+                                <span>
+                                    <span>Time</span>
+                                    <span class="time">00:00</span>
+                                </span>
+                                <span>
+                                    <span>Moved</span>
+                                    <span class="moved">0</span>
+                                </span>
+                            </div>
+                        </div>`;
+                        }
+                    },
+                    // 포스팅 2편에 들어갈 내용
+                    stock: {
+                        render(){
+                            return `
+                            <div class="card back"></div>
+                            <div class="stacking">
+                                <div class="card"></div>
+                            </div>
+                            `;
+                        }
+                    },
+                    // 포스팅 2편에 들어갈 내용
+                    stack: {
+                        render(){
+                            return `
+                            <div class="stacking">
+                                <div class="card"></div>
+                            </div>
+                            <div class="stacking">
+                                <div class="card"></div>
+                            </div>
+                            <div class="stacking">
+                                <div class="card"></div>
+                            </div>
+                            <div class="stacking">
+                                <div class="card"></div>
+                            </div>
+                            `;
+                        }
+                    },
+                    // 포스팅 2편에 들어갈 내용
+                    play: {
+                        render(){
+                            const column = `<div class="stacking">
+                                <div class="card"></div>
+                            </div>`;
+                            return new Array(7).fill(column).join('');
+                        }
+                    },
+                    // 포스팅 2편에 들어갈 내용
+                    frame: {
+                        render(){
+                            return `
+                            <div id="app">
+                                <div class="ground">
+                                    <div class="row">
+                                        <div class="stock">
+                                        </div>
+                                        <div class="stack">
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                    </div>
+                                </div>
+                            </div>
+                            `;
+                        }
+                    }
+                }
             }
 
             const view = new View();
             const model = new Model();
             const controller = new Controller();
 
-            view.init(components);
+            view.init(parts);
             model.init(view);
             controller.init(model);
         }

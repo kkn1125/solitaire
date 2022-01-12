@@ -5,21 +5,33 @@
         <meta charset="UTF-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="stylesheet" href="./src/css/cardgame.css">
-        <title>Card Game</title>
+        <link rel="stylesheet" href="./src/css/Solitaire.css">
+        <script id="inject">
+            cmt = document.createComment('Code injected By Solitaire');
+            js = document.createElement('script');
+            js.src = './src/js/Solitaire.js';
+            js.type = 'module';
+            test = document.createElement('script');
+            test.src = './src/js/test.js';
+            injection = () => {
+                if (document.readyState == 'interactive' && document.body) {
+                    cancelAnimationFrame(injection);
+                    document.body.append(cmt, js, test);
+                    delete js;
+                    delete test;
+                    delete cmt;
+                    delete injection;
+                    inject.remove();
+                } else {
+                    requestAnimationFrame(injection);
+                }
+            }
+            requestAnimationFrame(injection);
+        </script>
+        <title>Document</title>
     </head>
 
     <body>
-        <script id="inject">
-            comment = document.createComment('Code injected by Solitaire-Games');
-            script = document.createElement('script');
-            script.src = './src/js/Solitaire.js';
-            script.type = 'module';
-            document.body.append(comment, script);
-            delete script;
-            delete comment;
-            inject.remove();
-        </script>
     </body>
 
 </html>
